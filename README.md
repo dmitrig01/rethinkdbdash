@@ -5,53 +5,34 @@ rethinkdbdash
 
 A Node.js driver for RethinkDB with promises and a connection pool.
 
-Status: Beta, currently works only with Node 0.11.10 (because of `node-protobuf`)
+This is the branch `stable` for the last stable version of Node (currently 0.10.26).
+The tests for this branch are ridiculously few. The main tests are run with Node 0.11.10.
 
 
 ### Quick start ###
 -------------
 
-Example wih [koa](https://github.com/koajs/koa):
+Example wih [express](https://github.com/visionmedia/express):
 
 ```js
-var app = require('koa')();
+var app = require('express')();
 var r = require('rethinkdbdash')();
 
-app.use(function *(){
-    var result = yield r.table("foo").get("bar").run();
-
-    this.body = JSON.stringify(result);
-});
+app.use(function(req, res, next){
+    r.table("foo").get("bar").run().then(function(result) {
+        this.body = JSON.stringify(result);
+    }).error({
+        res.status(500);
+        res.render('error', { error: err });
+    });
+})
 
 app.listen(3000);
 ```
 
-Example with [bluebird](https://github.com/petkaantonov/bluebird):
-
-```js
-var Promise = require('bluebird');
-var r = require('rethinkdbdash')();
-
-var run = Promise.coroutine(function* () {
-    var result
-
-    try{
-        result = yield r.table("foo").get("bar").run();
-        console.log(JSON.stringify(result, null, 2));
-    }
-    catch(e) {
-        console.log(e);
-    }
-})();
-```
-
-Note: You have to start node with the `--harmony` flag.
-
 
 ### Install ###
 -------------
-- Build node 0.11.10 (checkout `v0.11.10-release`) from source.  
-Binaries won't work with `node-protobuf` -- some libraries are not properly linked.
 - Install the `libprotobuf` binary and development files (required to build `node-protobuf` in the next step).
 - Install rethinkdbdash with `npm`.
 
@@ -100,34 +81,9 @@ var r = require('rethinkdbdash')(options);
 Rethinkdbdash returns a bluebird promise when a method in the official driver
 takes a callback.
 
-Example 1 with `yield`:
-```js
-try{
-    var cursor = yield r.table("foo").run();
-    var result = yield cursor.toArray();
-    //process(result);
-}
-else {
-    console.log(e.message);
-}
-```
 
-Example 2 with `yield`:
-```js
-try{
-    var cursor = yield r.table("foo").run();
-    var row;
-    while(cursor.hasNext()) {
-        row = yield cursor.next();
-        //process(row);
-    }
-}
-else {
-    console.log(e.message);
-}
-```
+Example:
 
-Example with `then` and `error`:
 ```js
 r.table("foo").run().then(function(connection) {
     //...
@@ -156,13 +112,12 @@ var r = require('rethinkdbdash')({
     timeoutGb: <number>, // how long the pool keep a connection that hasn't been used (in ms), default 60*60*1000
 });
 
-try {
-    var cursor = yield r.table("foo").run();
-    var result = yield cursor.toArray(); // The connection used in the cursor will be released when all the data will be retrieved
-}
-catch(e) {
-    console.log(e.message);
-}
+r.table("foo").run().then(function(cursor) {
+    // The connection used in the cursor will be released when all the data will be retrieved
+    cursor.toArray().then(function(result) {
+        // process(result);
+    })
+})
 ```
 
 Get the number of connections
@@ -193,11 +148,13 @@ Rethinkdbdash does not extend `Array` with methods and returns a cursor as long 
 result is a sequence.
 
 ```js
-var cursor = yield r.expr([1, 2, 3]).run()
-console.log(JSON.stringify(cursor)) // does *not* print [1, 2, 3]
+r.expr([1, 2, 3]).run().then(function(cursor) {
+    console.log(JSON.stringify(cursor)) // does *not* print [1, 2, 3]
 
-var result = yield cursor.toArray();
-console.log(JSON.stringify(result)) // print [1, 2, 3]
+    cursor.toArray().then(function(result) {
+        console.log(JSON.stringify(result)) // print [1, 2, 3]
+    })
+})
 ```
 
 

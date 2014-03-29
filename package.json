@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --harmony-generators -t 20000"
+    "test": "mocha test/stable.js"
   },
   "repository": {
     "type": "git",
