@@ -5,8 +5,8 @@ rethinkdbdash
 
 A Node.js driver for RethinkDB with promises and a connection pool.
 
-This is the branch `stable` for the last stable version of Node (currently 0.10.26).
-The tests for this branch are ridiculously few. The main tests are run with Node 0.11.10.
+This is the branch `stable` for the last stable version of Node (currently `0.10.26`).  
+The tests for this branch are ridiculously few. The main tests are run with Node `0.11.10`.
 
 
 ### Quick start ###
@@ -21,9 +21,9 @@ var r = require('rethinkdbdash')();
 app.use(function(req, res, next){
     r.table("foo").get("bar").run().then(function(result) {
         this.body = JSON.stringify(result);
-    }).error({
+    }).error(function(error) {
         res.status(500);
-        res.render('error', { error: err });
+        res.render('error', { error: error });
     });
 })
 
@@ -206,7 +206,7 @@ Update `test/config.js` if your RethinkDB instance doesn't run on the default pa
 
 Run
 ```
-mocha --harmony-generators
+npm test
 ```
 
 
